@@ -482,14 +482,15 @@ class plot:
         # colorize_no_Data
         def colorize_image(input_img, minval=None, maxval=None, is_cls=False):
             if is_cls:
-                b = input_img == 6
-            w = np.isnan(input_img)
+                building_map = input_img == 6
+                not_building_map = input_img != 6
+            nan_map = np.isnan(input_img)
             img = np.zeros((input_img.shape[0], input_img.shape[1], 3))
             img[:, :, 0] = np.copy(input_img)
             img[:, :, 1] = np.copy(input_img)
             img[:, :, 2] = np.copy(input_img)
             if minval == None and maxval == None:
-                maxval = np.nanpercentile(img, 99)
+                maxval = np.nanpercentile(img, 95)
                 minval = np.nanpercentile(img, 1)
             img[img < minval] = minval
             img[img > maxval] = maxval
@@ -497,14 +498,17 @@ class plot:
             img = img - minval
             img = ((255.0 * img) / maxval).astype(np.uint8)
 
-            img[w, 0] = 135.0
-            img[w, 1] = 206.0
-            img[w, 2] = 250.0
+            img[nan_map, 0] = 135.0
+            img[nan_map, 1] = 206.0
+            img[nan_map, 2] = 250.0
 
             if is_cls:
-                img[b, 0] = 230
-                img[b, 1] = 0
-                img[b, 2] = 0
+                img[building_map, 0] = 230
+                img[building_map, 1] = 0
+                img[building_map, 2] = 0
+                img[not_building_map, 0] = 0
+                img[not_building_map, 1] = 0
+                img[not_building_map, 2] = 0
 
             img = img.astype(np.uint8)
             return img, minval, maxval
@@ -541,6 +545,13 @@ class plot:
         plot_3_image = Image.fromarray(plot_3_image)
         plot_5_image = Image.fromarray(plot_5_image)
         plot_6_image = Image.fromarray(plot_6_image)
+
+        # Autocontrast
+        # from PIL import ImageOps
+        # plot_2_image = ImageOps.autocontrast(plot_2_image)
+        # plot_5_image = ImageOps.autocontrast(plot_5_image)
+        # plot_3_image = ImageOps.autocontrast(plot_3_image)
+        # plot_6_image = ImageOps.autocontrast(plot_6_image)
 
         # Create image mosaic/stack
         try:
