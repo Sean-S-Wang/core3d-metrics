@@ -483,7 +483,7 @@ class plot:
         def colorize_image(input_img, minval=None, maxval=None, is_cls=False):
             if is_cls:
                 building_map = input_img == 6
-                not_building_map = input_img != 6
+                not_building_map = np.bitwise_and((input_img != 6),(input_img != 65))
             nan_map = np.isnan(input_img)
             img = np.zeros((input_img.shape[0], input_img.shape[1], 3))
             img[:, :, 0] = np.copy(input_img)
