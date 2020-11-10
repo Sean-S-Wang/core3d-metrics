@@ -6,6 +6,7 @@ from core3dmetrics.geometrics.image_pair_plot import ImagePairPlot, ImagePair
 
 if os.getenv('DISPLAY') is None and not platform.system() == "Windows":
     import matplotlib
+
     matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
@@ -18,13 +19,12 @@ except ImportError:
 
 
 class plot:
-
     saveDir = '.'
     savePrefix = ''
     saveExe = '.png'
 
     defaultCM = 'jet'
-    badColor = 'white'   # Color used to display NaNs
+    badColor = 'white'  # Color used to display NaNs
 
     showPlots = True
     autoSave = False  # Saves figure at end of call to plot.make()
@@ -51,19 +51,19 @@ class plot:
             self.defaultCM = kwargs['cmap']
 
         if 'dpi' in kwargs:
-                self.dpi = kwargs['dpi']
+            self.dpi = kwargs['dpi']
 
         if (os.getenv('DISPLAY') is None) and self.showPlots:
             if not platform.system() == "Windows":
                 print('DISPLAY not set.  Disabling plot display')
                 self.showPlots = False
-            
+
         plt.rcParams['image.cmap'] = self.defaultCM
 
         print("showPlots = " + str(self.showPlots))
 
     def make(self, image=None, title='', fig=None, **kwargs):
-    
+
         if 'badValue' in kwargs:
             image = np.array(image)
             image[image == kwargs['badValue']] = np.nan
@@ -77,12 +77,12 @@ class plot:
             return plt
 
         imshow_kwargs = {}
-        keys = ['vmin','vmax']
+        keys = ['vmin', 'vmax']
         for key in keys:
             if key in kwargs:
                 imshow_kwargs[key] = kwargs[key]
 
-        hImg = plt.imshow(image,**imshow_kwargs)
+        hImg = plt.imshow(image, **imshow_kwargs)
         mpl.cm.get_cmap().set_bad(color=self.badColor)
 
         if 'cmap' in kwargs:
@@ -146,7 +146,7 @@ class plot:
 
         cv2.imwrite(fn, stoplight_chart)
 
-    def make_stoplight_plot(self, fp_image=None, fn_image= None, ref=None, title='', fig=None, **kwargs):
+    def make_stoplight_plot(self, fp_image=None, fn_image=None, ref=None, title='', fig=None, **kwargs):
         if ref is None:
             return plt
         plt.figure(fig)
@@ -158,15 +158,15 @@ class plot:
             fn_image = np.array(fn_image)
             fn_image[fp_image == kwargs['badValue']] = np.nan
         if fp_image is None or fn_image is None:
-             return plt
-         # Create the image
+            return plt
+        # Create the image
         if fp_image.shape != fn_image.shape:
             raise ValueError("Dimension mismatch")
         stoplight_chart = np.multiply(np.ones((fp_image.shape[0], fp_image.shape[1], 3), dtype=np.uint8), 220)
         red = [255, 0, 0]
         black = [0, 0, 0]
         blue = [0, 0, 255]
-        white = [255,255,255]
+        white = [255, 255, 255]
 
         ref = np.uint8(ref)
 
@@ -196,9 +196,9 @@ class plot:
     def stretch_contrast(self, image):
         a = image.min()
         b = image.max()
-        r = b-a
+        r = b - a
         if not (np.unique(image).__len__() == 1 and np.unique(image)[0] == 0):
-            image = ((image - a)/r)*255
+            image = ((image - a) / r) * 255
         image = np.uint8(image)
         return image
 
@@ -273,7 +273,6 @@ class plot:
 
         if not self.showPlots:
             plt.close(plt.gcf())
-
 
     def make_iou_scatter(self, iou_list, sort_type='', title='', fig=None, width=4000, **kwargs):
         ax = plt.figure(fig)
@@ -358,7 +357,8 @@ class plot:
         fn = os.path.join(self.saveDir, saveName + self.saveExe)
         plt.savefig(fn, dpi=self.dpi)
 
-    def make_image_pair_plots(self, performer_pair_data_file, performer_pair_file, performer_files_chosen_file, figNum, **kwargs):
+    def make_image_pair_plots(self, performer_pair_data_file, performer_pair_file, performer_files_chosen_file, figNum,
+                              **kwargs):
         if performer_pair_data_file is None or performer_pair_file is None or performer_files_chosen_file is None:
             return
         data_file = performer_pair_data_file
@@ -383,7 +383,7 @@ class plot:
 
     def make_final_metrics_images(self, stoplight_fn, errhgt_fn, test_conf_filename, cls_iou_fn, cls_z_iou_fn,
                                   cls_z_slope_fn, ref_cls, output_dir):
-        #TODO: “metrics.png”
+        # TODO: “metrics.png”
         # Top 3: 2D IOU, 3D IOU, CONF VIZ
         # Bottom 3: CLS IOU, CLS+Z IOU, and CLS+Z+SLOPE IOU
         from PIL import Image
@@ -395,27 +395,20 @@ class plot:
         iou_3d_path = Path(errhgt_fn)
         iou_3d_image = Image.open(str(iou_3d_path.absolute()))
         stoplight_shape = np.shape(iou_2d_image)
-        conf_viz_path = Path(str(Path(test_conf_filename).parent.absolute()),
-                             Path(test_conf_filename).stem + '_VIZ.tif')
-        if conf_viz_path.is_file():
-            conf_viz_image = Image.open(conf_viz_path)
-            conf_shape = np.shape(conf_viz_image)
-            conf_viz_image = conf_viz_image.resize((stoplight_shape[1], stoplight_shape[0]), resample=0)
+        if test_conf_filename.is_file():
+            conf_image = Image.open(test_conf_filename)
+            conf_viz_image = conf_image.resize((stoplight_shape[1], stoplight_shape[0]), resample=0)
         else:
-            # If can't find viz image, use non viz
-            conf_viz_image = Image.open(test_conf_filename)
-            conf_viz_image_rgb = Image.new("RGB", conf_viz_image.size)
-            conf_viz_image_rgb.paste(conf_viz_image)
-            conf_shape = np.shape(conf_viz_image)
-            conf_viz_image = conf_viz_image.resize((stoplight_shape[1], stoplight_shape[0]), resample=0)
+            print("Can't find image. Aborting metrics.png creation...")
+            return
 
         # Recolor conf_viz_image
-        black_color = (0, 0, 0)
+        background_color = (0, 0, 0)
         gray_color = (220, 220, 220)
         red_color = (255, 0, 0)
         blue_color = (0, 0, 255)
         conf_viz_image_array = np.array(conf_viz_image)
-        conf_viz_image_array[np.all(conf_viz_image_array == black_color, axis=-1)] = (gray_color)
+        conf_viz_image_array[np.all(conf_viz_image_array == background_color, axis=-1)] = (gray_color)
         conf_viz_image_recolor = Image.fromarray(np.uint8(conf_viz_image_array))
 
         def assign_colors_to_images(metrics_image, ref_cls):
@@ -483,20 +476,21 @@ class plot:
         def colorize_image(input_img, minval=None, maxval=None, is_cls=False):
             if is_cls:
                 building_map = input_img == 6
-                not_building_map = np.bitwise_and((input_img != 6),(input_img != 65))
+                not_building_map = np.bitwise_and((input_img != 6), (input_img != 65))
             nan_map = np.isnan(input_img)
+            if minval == None and maxval == None:
+                maxval = np.nanpercentile(input_img, 95)
+                minval = np.nanpercentile(input_img, 1)
+            input_img[input_img < minval] = minval
+            input_img[input_img > maxval] = maxval
+            input_img[np.isnan(input_img)] = minval
+            input_img = input_img - minval
+            input_img = (255.0 * (input_img / (maxval-minval))).astype(np.uint8)
+
             img = np.zeros((input_img.shape[0], input_img.shape[1], 3))
             img[:, :, 0] = np.copy(input_img)
             img[:, :, 1] = np.copy(input_img)
             img[:, :, 2] = np.copy(input_img)
-            if minval == None and maxval == None:
-                maxval = np.nanpercentile(img, 95)
-                minval = np.nanpercentile(img, 1)
-            img[img < minval] = minval
-            img[img > maxval] = maxval
-            img[np.isnan(img)] = minval
-            img = img - minval
-            img = ((255.0 * img) / maxval).astype(np.uint8)
 
             img[nan_map, 0] = 135.0
             img[nan_map, 1] = 206.0
@@ -614,12 +608,10 @@ class plot:
         # Create image mosaic/stack
         num_rows, num_cols, ch_num = np.shape(plot_1_image)
 
-
         # Resize test images to same size as ref images
         plot_4_image = plot_4_image.resize((num_cols, num_rows), resample=0)
         plot_5_image = plot_5_image.resize((num_cols, num_rows), resample=0)
         plot_6_image = plot_6_image.resize((num_cols, num_rows), resample=0)
-
 
         separation_bar_vert = np.ones([num_rows, int(np.floor(num_cols * 0.02)), ch_num], dtype=np.uint8)
         separation_bar_vert.fill(255)
