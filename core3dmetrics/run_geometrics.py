@@ -251,7 +251,17 @@ def run_geometrics(config_file, ref_path=None, test_path=None, output_path=None,
         raise ValueError('All pixels are ignored')
 
     # inputs.png
+    # Write final metrics out
     output_folder = os.path.join(output_path, "metrics_final")
+    try:
+        os.mkdir(output_folder)
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            pass
+        else:
+            print("Can't create directory, please check permissions...")
+            raise
+
     plot.make_final_input_images_grayscale(ref_cls, ref_dsm, ref_dtm, test_cls,
                                             test_dsm, test_dtm, output_folder)
 
